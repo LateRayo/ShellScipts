@@ -8,6 +8,21 @@ if [ "$numero" != 1 ] && [ "$numero" != 2 ]; then
     exit 1
 fi
 
+# modifico el archivo de configuracion de pacman
+archivo_config="/etc/pacman.conf"
+linea_a_buscar="#ParallelDownloads = 5"
+nueva_linea="ILoveCandy"
+archivo_temporal=$(mktemp)
+
+while read -r linea; do
+    echo "$linea" >> "$archivo_temporal"
+    if [[ $linea == *"$linea_a_buscar"* ]]; then
+        echo "$nueva_linea" >> "$archivo_temporal"
+        echo "" >> "$archivo_temporal"
+    fi
+done < "$archivo_config"
+mv "$archivo_temporal" "$archivo_config"
+
 # Actualiza los repositorios y el sistema
 sudo pacman -Syu --noconfirm
 
@@ -44,18 +59,3 @@ sudo pacman -S --noconfirm \
     vlc                      # Reproductor multimedia VLC
 
 
-# modifico el archivo de configuracion de pacman
-
-archivo_config="/etc/pacman.conf"
-linea_a_buscar="#ParallelDownloads = 5"
-nueva_linea="ILoveCandy"
-archivo_temporal=$(mktemp)
-
-while read -r linea; do
-    echo "$linea" >> "$archivo_temporal"
-    if [[ $linea == *"$linea_a_buscar"* ]]; then
-        echo "$nueva_linea" >> "$archivo_temporal"
-        echo "" >> "$archivo_temporal"
-    fi
-done < "$archivo_config"
-mv "$archivo_temporal" "$archivo_config"
