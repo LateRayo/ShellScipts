@@ -57,5 +57,10 @@ sudo pacman -S --noconfirm \
     zip \                    # Herramienta para comprimir archivos ZIP
     scrot \                  # Herramienta para captura de pantalla
     vlc                      # Reproductor multimedia VLC
+    base-devel
 
-
+# intalacion automatica de aur
+git clone https://aur.archlinux.org/yay-git.git /opt/yay
+cd /opt/yay
+sudo chown -R $USER:$USER .
+makepkg -si
