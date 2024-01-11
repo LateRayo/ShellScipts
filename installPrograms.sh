@@ -64,3 +64,9 @@ git clone https://aur.archlinux.org/yay-git.git /opt/yay
 cd /opt/yay
 sudo chown -R $USER:$USER . # Cambia la propiedad del directorio a tu usuario actual
 makepkg -si
+
+# Limpiar el sistema
+sudo pacman -Rns $(pacman -Qdtq)
+sudo pacman -Sc --noconfirm
+
+echo "¡Instalación y configuración completadas!"
