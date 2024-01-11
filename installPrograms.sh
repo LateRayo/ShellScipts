@@ -56,11 +56,11 @@ sudo pacman -S --noconfirm \
     unzip \                  # Herramienta para descomprimir archivos ZIP
     zip \                    # Herramienta para comprimir archivos ZIP
     scrot \                  # Herramienta para captura de pantalla
-    vlc                      # Reproductor multimedia VLC
-    base-devel
+    vlc \                    # Reproductor multimedia VLC
+    base-devel               # Grupo de paquetes de desarrollo esenciales para compilar software
 
 # intalacion automatica de aur
 git clone https://aur.archlinux.org/yay-git.git /opt/yay
 cd /opt/yay
-sudo chown -R $USER:$USER .
+sudo chown -R $USER:$USER . # Cambia la propiedad del directorio a tu usuario actual
 makepkg -si
