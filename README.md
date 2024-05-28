@@ -6,7 +6,7 @@ Instala aur.
 
 ## Correcion de bug y explicacion de los prgramas
 
-Si vas a usar la \ para saltar a la próxima línea y continuar, asegúrate que no haya espacios porque no vas a tener más que errores. Ese fue uno de mos errores y que no supe como resolverlo hasta ahora.
+Si vas a usar la `\` para saltar a la próxima línea y continuar, asegúrate que no haya espacios porque no vas a tener más que errores. Ese fue uno de mos errores y que no supe como resolverlo hasta ahora.
 Antes tenía una explicación para cada programa en el script, pero como lo tuvo que quitar para arreglar el error los explicaré a continuación.
 
 | Programa                  | Descripción |
