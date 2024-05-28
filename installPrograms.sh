@@ -33,31 +33,31 @@ fi
 
 # Instala programas generales con comentarios explicativos
 sudo pacman -S --noconfirm \
-    xorg \                   # Servidor gráfico X
+    xorg \
     xorg-xinit \
-    picom \                  # Compositor para efectos visuales
-    feh \                    # Visor de imágenes y fondo de pantalla
-    xrandr \                 # Utilidad para configurar la disposición de pantalla
-    arandr \                 # Interfaz gráfica para xrandr
-    chromium \               # Navegador web Chromium
-    alacritty \              # Emulador de terminal Alacritty
-    lightdm \                # Gestor de pantalla ligero
-    lightdm-gtk-greeter \    # Tema GTK para LightDM
-    pulseaudio \             # Servidor de sonido PulseAudio
-    trayer \                 # Administrador de bandeja del sistema
-    pavucontrol \            # Controlador de volumen para PulseAudio
-    rofi \                   # Lanzador de aplicaciones y buscador
-    libnotify \              # Librería para mostrar notificaciones
-    notification-daemon \    # Demonio para mostrar notificaciones
-    udiskie \                # Montador automático de dispositivos de almacenamiento extraíbles
-    ntfs-3g \                # Controlador NTFS para Linux
-    libreoffice \            # Suite de oficina LibreOffice
-    git \                    # Sistema de control de versiones
-    unzip \                  # Herramienta para descomprimir archivos ZIP
-    zip \                    # Herramienta para comprimir archivos ZIP
-    scrot \                  # Herramienta para captura de pantalla
-    vlc \                    # Reproductor multimedia VLC
-    base-devel               # Grupo de paquetes de desarrollo esenciales para compilar software
+    picom \
+    feh \
+    xrandr \
+    arandr \
+    chromium \
+    alacritty \
+    lightdm \
+    lightdm-gtk-greeter \
+    pulseaudio \
+    trayer \
+    pavucontrol \
+    rofi \
+    libnotify \
+    notification-daemon \
+    udiskie \
+    ntfs-3g \
+    libreoffice \
+    git \
+    unzip \
+    zip \
+    scrot \
+    vlc \
+    base-devel
 
 # intalacion automatica de aur
 git clone https://aur.archlinux.org/yay-git.git /opt/yay
