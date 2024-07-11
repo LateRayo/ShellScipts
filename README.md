@@ -42,4 +42,19 @@ Estos programas cubren una amplia gama de funciones, desde la gestión del entor
 
 # Scrpt para iniciar Rclone al inicio del sistema
 
-El script compruba la aclidad de la conexion, y en vase a eso ejecuta rclone con el parametro --deamon. 
+Me encanta rclone, por eso hice este script que mejora su uso, acercándolo más al Google Drive o One Drive de Windows. La actualización más importante incluye: La posibilidad de trabajar sin conexión y notificaciones que indican si la conexión fue exitosa y el estado de carga de los archivos.
+Si estás si conexión o estás trabajando con archivos grandes y quieres trabajar en la nueve recomendable que lo hagas en una carpeta local, que tiene que especificar en el script. Esa carpeta luego se sincronizara con tus archivos en la nube la próxima vez que encinas y apagues el equipo(si es que así tiene configurado el script).
+
+```bash
+REMOTE_NAME="gdrive"                          # Nombre del remoto configurado en rclone
+REMOTE_PATH="/"                               # Carpeta en el remoto
+LOCAL_PATH="/home/nikito/local-google-drive"  # Carpeta local dedicada a la sincronización
+MOUNT_PATH="/home/nikito/google-drive"        # Punto de montaje para rclone
+LOG_FILE="/home/nikito/rclone_mount.log"      # Ubicacion de archivo log
+```
+
+Si eliminas algo en la carpeta local no te preocupes porque no se eliminara de la nube. Está hecho solo para subir, no para eliminar, para mantener un orden y claridad. Cuando los archivos se empiecen a subir te indicará con notificaciones el estado de la carga, si no hay nada para transferir o si hubo un error.
+
+# sync
+Otro archivo importante es el sync.sh. Este archivo copia lo que estabas haciendo en tu carpeta local a la nube. Es útil porque si estás trabajando con archivos grandes es confuso saber si ya terminaron de subirse. Cuando los archivos se empiezan a subir te indicará con notificaciones el estado de la carga, si no hay nada para transferir o si hubo un error.
+Es básicamente la función de `copy_files` dentro de script principal, pero en un archivo aparte.
