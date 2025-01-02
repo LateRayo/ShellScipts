@@ -26,16 +26,24 @@ REMOTE_NAME="gdrive"                          # Nombre del remoto configurado en
 REMOTE_PATH="/"                               # Carpeta en el remoto
 LOCAL_PATH="/home/nikito/local-google-drive"  # Carpeta local dedicada a la sincronización
 MOUNT_PATH="/home/nikito/google-drive"        # Punto de montaje para rclone
-LOG_FILE="/home/nikito/rclone_mount.log"
+LOG_FILE="/home/nikito/rclone_mount.log"      # archivo de logs
+
+folders_to_sync=(
+    "universidad/Analisis de Sistemas y Señales"
+    "universidad/Informatica 2"
+    "universidad/Fisica 2"
+)
 
 # Función para verificar la conectividad a Internet
-check_internet_connection() {
+check_internet_connection() 
+{
     curl -s --head http://www.google.com | head -n 1 | grep "HTTP/1.[01] [23].." > /dev/null
     return $?
 }
 
 # Función para verificar si rclone está instalado
-check_rclone_installed() {
+check_rclone_installed() 
+{
     command -v rclone > /dev/null 2>&1
     return $?
 }
@@ -68,7 +76,8 @@ check_connection_speed() {
 }
 
 # Función para montar rclone con parámetros optimizados
-mount_rclone() {
+mount_rclone() 
+{
     rclone mount $REMOTE_NAME:$REMOTE_PATH $MOUNT_PATH \
         --allow-non-empty \
         --vfs-cache-mode full \
@@ -90,107 +99,189 @@ mount_rclone() {
     else
         echo "Error al montar rclone."
         echo "$(date) - Error al montar rclone." >> $LOG_FILE
+        notify-send "Fallo el montaje" "Error rclone mount"
         exit 1
     fi
 }
 
-# Función para copiar archivos con notificaciones
-copy_files() {
+#----------- hasta aca el motaje de la unidad remota -----------
+
+# Función para enviar notificaciones según el progreso de la copia
+send_progress_notification() 
+{
+    local progress=$1
+    local message=$2
+    local log_message=$3
+
+    notify-send "$message" "$progress% completado"
+    echo "$(date) - $log_message" >> $LOG_FILE
+}
+
+
+# Función para manejar errores durante la copia
+handle_error() 
+{
+    local error_message=$1
+    notify-send "Error en la copia" "$error_message"
+    echo "$(date) - Error en la copia: $error_message" >> $LOG_FILE
+}
+
+# Función principal para copiar archivos con notificaciones
+copy_files_to_cloud() 
+{
     start_time=$(date +%s)
-
-    # Variables para rastrear notificaciones enviadas
-    notified_25=false
-    notified_50=false
-    notified_75=false
-    notified_100=false
-
-    # Variable para rastrear el estado de la copia
+    
+    # Variables para seguimiento del progreso y errores
+    notified_progress=(false false false false)
+    progress_levels=(25 50 75 100)
+    
     copy_error=false
     nothing_to_transfer=false
 
-    # Notificación de inicio de la copia
+    # Notificación de inicio
     notify-send "Copia iniciada" "La copia de archivos ha comenzado"
-    echo "$(date) - Copia iniciada. La copia de archivos ha comenzado."
+    echo "$(date) - Copia iniciada. La copia de archivos ha comenzado." >> $LOG_FILE
 
-    # Comienza la copia con rclone y procesa la salida
+    # Iniciar la copia con rclone y procesar la salida
+    # Este bucle while procesa la salida del comando rclone línea por línea en tiempo real.
+    # El comando rclone se ejecuta para copiar archivos y su salida es pasada al bucle while mediante sustitución de procesos.
+    # Cada línea generada por rclone se lee y almacena en la variable 'line'.
     while IFS= read -r line; do
         echo "$(date) - $line" >> $LOG_FILE
 
-        # Extracción de porcentaje de "Transferred"
+        # Extraer porcentaje de "Transferred"
         if [[ $line =~ Transferred:\ +([0-9]+)\ / ]]; then
             percentage=${BASH_REMATCH[1]}
         fi
 
-        # Notificación en caso de error
+        # Verificar si ocurrió un error específico
         if [[ $line =~ "Error 403" ]]; then
-            notify-send "Error 403" "Quota exceeded for quota metric 'Queries' and limit 'Queries per minute' of service 'drive.googleapis.com"
-            echo "$(date) - Error en la copia. $line"
-            echo "$(date) - Erro 403." >> $LOG_FILE
+            handle_error "Quota exceeded for quota metric 'Queries' and limit 'Queries per minute' of service 'drive.googleapis.com'"
             copy_error=true
             break
         fi
 
-        # Notificación cuando no hay nada para transferir
+        # Verificar si no hay nada para transferir
         if [[ $line =~ "nothing to transfer" ]]; then
             notify-send "Copia no necesaria" "No hay archivos para copiar"
-            echo "$(date) - Copia no necesaria. No hay archivos para copiar."
-            echo "$(date) - Copia no necesaria." >> $LOG_FILE
+            echo "$(date) - Copia no necesaria. No hay archivos para copiar." >> $LOG_FILE
             nothing_to_transfer=true
             break
         fi
 
-        # Verificar si hay un error
+        # Verificar cualquier otro error general
         if [[ $line =~ "ERROR" ]]; then
-            notify-send "Error en la copia" "Ocurrió un error durante la copia"
-            echo "$(date) - Error en la copia. Ocurrió un error durante la copia."
+            handle_error "Ocurrió un error durante la copia"
             copy_error=true
             break
         fi
 
-        # Comprobación de cada 10 segundos
-        current_time=$(date +%s)
-        elapsed_time=$((current_time - start_time))
-
-        if (( elapsed_time % 10 == 0 )); then
-            if [[ $percentage -ge 25 && $notified_25 == false ]]; then
-                notify-send "Copia en progreso" "25% completado"
-                echo "$(date) - Copia en progreso. 25% completado."
-                notified_25=true
-            elif [[ $percentage -ge 50 && $notified_50 == false ]]; then
-                notify-send "Copia en progreso" "50% completado"
-                echo "$(date) - Copia en progreso. 50% completado."
-                notified_50=true
-            elif [[ $percentage -ge 75 && $notified_75 == false ]]; then
-                notify-send "Copia en progreso" "75% completado"
-                echo "$(date) - Copia en progreso. 75% completado."
-                notified_75=true
-            elif [[ $percentage -ge 100 && $notified_100 == false ]]; then
-                notify-send "Copia completa" "100% completado"
-                echo "$(date) - Copia completa. 100% completado."
-                notified_100=true
+        # Enviar notificaciones según el progreso
+        for i in "${!progress_levels[@]}"; do
+            if [[ $percentage -ge ${progress_levels[i]} && ${notified_progress[i]} == false ]]; then
+                send_progress_notification "${progress_levels[i]}" "Copia en progreso" "Copia en progreso. ${progress_levels[i]}% completado."
+                notified_progress[i]=true
             fi
-        fi
-    #process substitution
-    done < <(rclone copy $LOCAL_PATH $REMOTE_NAME:$REMOTE_PATH --progress --verbose 2>&1)
+        done
+    done < <(rclone copy "$LOCAL_PATH" "$REMOTE_NAME:$REMOTE_PATH" --update --progress --verbose 2>&1)
 
+    # Finalización del proceso según el resultado
     if [ "$copy_error" = true ]; then
         exit 1
     elif [ "$nothing_to_transfer" = true ]; then
-        exit 0
+        return 0
     else
-        if [ $notified_100 == false ]; then
-            notify-send "Copia completa" "100% completado"
-            echo "$(date) - Copia completa. 100% completado."
+        if [ "${notified_progress[3]}" = false ]; then
+            send_progress_notification "100" "Copia completa" "Copia completa. 100% completado."
         fi
 
         end_time=$(date +%s)
         duration=$((end_time - start_time))
         echo "$(date) - Copia exitosa. Duración: $duration segundos." >> $LOG_FILE
         notify-send "Copia completa" "Duración: $duration segundos"
-        echo "$(date) - Copia completa. Duración: $duration segundos."
-        exit 0
+        return 0
     fi
 }
+
+# Función para sincronizar las carpetas desde Google Drive a local
+# Las capetas vacas no se copian.
+copy_files_to_local() 
+{
+    start_time=$(date +%s)
+    
+    # Variables para seguimiento del progreso y errores
+    notified_progress=(false false false false)
+    progress_levels=(25 50 75 100)
+    
+    sync_error=false
+    nothing_to_sync=false
+
+    # Iterar sobre las carpetas a sincronizar
+    for folder in "${folders_to_sync[@]}"; do
+        local_folder="$LOCAL_PATH/$folder"
+        remote_folder="$REMOTE_NAME:$REMOTE_PATH/$folder"
+        
+        echo "Sincronizando $remote_folder a $local_folder..."
+        notify-send "Sincronizando $remote_folder a $local_folder..."
+        
+        # Sincronizar archivos usando rclone y procesar la salida
+        while IFS= read -r line; do
+            echo "$(date) - $line" >> $LOG_FILE
+
+            # Extraer porcentaje de "Transferred"
+            if [[ $line =~ Transferred:\ +([0-9]+)\ / ]]; then
+                percentage=${BASH_REMATCH[1]}
+            fi
+
+            # Verificar si ocurrió un error específico
+            if [[ $line =~ "Error 403" ]]; then
+                handle_error "Quota exceeded for quota metric 'Queries' and limit 'Queries per minute' of service 'drive.googleapis.com'"
+                sync_error=true
+                break
+            fi
+
+            # Verificar si no hay nada para transferir
+            if [[ $line =~ "nothing to transfer" ]]; then
+                notify-send "Sincronización no necesaria" "No hay archivos para sincronizar en $folder"
+                echo "$(date) - Sincronización no necesaria para $folder. No hay archivos para sincronizar." >> $LOG_FILE
+                nothing_to_sync=true
+                break
+            fi
+
+            # Verificar cualquier otro error general
+            if [[ $line =~ "ERROR" ]]; then
+                handle_error "Ocurrió un error durante la sincronización de $folder"
+                sync_error=true
+                break
+            fi
+
+            # Enviar notificaciones según el progreso
+            for i in "${!progress_levels[@]}"; do
+                if [[ $percentage -ge ${progress_levels[i]} && ${notified_progress[i]} == false ]]; then
+                    send_progress_notification "${progress_levels[i]}" "Sincronización en progreso" "Sincronización en progreso de $folder. ${progress_levels[i]}% completado."
+                    notified_progress[i]=true
+                fi
+            done
+        done < <(rclone copy "$remote_folder" "$local_folder" --update --progress --verbose 2>&1)
+
+        # Finalización del proceso según el resultado de la carpeta actual
+        if [ "$sync_error" = true ]; then
+            exit 1
+        elif [ "$nothing_to_sync" = true ]; then
+            continue
+        else
+            if [ "${notified_progress[3]}" = false ]; then
+                send_progress_notification "100" "Sincronización completa" "Sincronización completa de $folder. 100% completado."
+            fi
+
+            end_time=$(date +%s)
+            duration=$((end_time - start_time))
+            echo "$(date) - Sincronización exitosa de $folder. Duración: $duration segundos." >> $LOG_FILE
+            notify-send "Sincronización completa" "Duración: $duration segundos para $folder"
+        fi
+    done
+}
+
 
 
 # Función principal
@@ -217,8 +308,16 @@ main() {
             # Iniciar rclone y montar el drive con parámetros optimizados
             mount_rclone
 
-            # Copiar archivos
-            copy_files
+            #-----------hasta aca el motaje de la unidad remota -----------
+            #-----------aqui empieza un copia local de archivos -----------
+
+            # Copiar archivos de local a la nube
+            copy_files_to_cloud
+
+            # Copiar archivos de la nube a local
+            copy_files_to_local
+
+
         else
             echo "La conexión es demasiado lenta. rclone no se iniciará."
             echo "$(date) - La conexión es demasiado lenta." >> $LOG_FILE
@@ -234,6 +333,7 @@ main() {
 
     # Registrar la operación en un archivo de log
     echo "$(date) - Script ejecutado exitosamente." >> $LOG_FILE
+    echo "--------------------------------------------------------------------" >> $LOG_FILE
 }
 
 # Llamar a la función principal
